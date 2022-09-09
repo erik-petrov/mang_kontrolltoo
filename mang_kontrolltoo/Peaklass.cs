@@ -92,7 +92,7 @@ namespace mang_kontrolltoo
             }
             Tegelane win = mang.SuurimaPunktideArvuga();
             Console.WriteLine(win.Info());
-            Console.WriteLine("Игрок имел следующие предметы:");
+            Console.WriteLine("Игрок имел следующие предметы: ");
             win.väljastaEsemed();
 
         }
