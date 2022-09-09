@@ -12,7 +12,7 @@ namespace mang_kontrolltoo
         public static List<Ese> LoeEsemed()
         {
             List<Ese> list = new List<Ese>();
-            using(StreamReader sr = new StreamReader("C:\\Users\\opilane\\source\\repos\\PetrovTARpv20\\mang_kontrolltoo\\mang_kontrolltoo\\Items.txt"))
+            using(StreamReader sr = new StreamReader(Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + "/items.txt"))
             {
                 while (!sr.EndOfStream)
                 {
@@ -69,6 +69,7 @@ namespace mang_kontrolltoo
         static Tegelane[] giveOutItems(Tegelane[] plrs)
         {
             List<Ese> itemList = LoeEsemed();
+            if (itemList.Count <= 0) throw new ArgumentOutOfRangeException();
             foreach (Tegelane plr in plrs)
             {
                 Shuffle(itemList);
@@ -89,7 +90,10 @@ namespace mang_kontrolltoo
             {
                 Console.WriteLine(winner.Info());
             }
-            Console.WriteLine(mang.SuurimaPunktideArvuga().Info());
+            Tegelane win = mang.SuurimaPunktideArvuga();
+            Console.WriteLine(win.Info());
+            Console.WriteLine("Игрок имел следующие предметы:");
+            win.väljastaEsemed();
 
         }
     }
