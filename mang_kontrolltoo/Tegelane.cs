@@ -8,7 +8,7 @@ namespace mang_kontrolltoo
 {
     internal class Tegelane : Entity, IComparable<Tegelane>
     {
-        string nimi;
+        public string nimi;
         List<Ese> items;
 
         public Tegelane(string nimi)

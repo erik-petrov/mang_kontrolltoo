@@ -1,18 +1,26 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace mang_kontrolltoo
 {
     internal static class Peaklass
     {
+        static string itemFile = Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + "/items.txt";
+        static string usedNameFile = "../../../usedName.txt";
+        static string leaderboardFile = "../../../leaderboard.txt";
+
         public static Random rnd = new Random();
+        static List<string> usedNames = new List<string>();
+        static Dictionary<string, int> leaderboard = new Dictionary<string, int>();
         public static List<Ese> LoeEsemed()
         {
             List<Ese> list = new List<Ese>();
-            using(StreamReader sr = new StreamReader(Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + "/items.txt"))
+            using(StreamReader sr = new StreamReader(itemFile))
             {
                 while (!sr.EndOfStream)
                 {
@@ -24,8 +32,35 @@ namespace mang_kontrolltoo
             return list;
         }
 
+        public static List<string> GetUsedNames()
+        {
+            using (StreamReader sr = new StreamReader(usedNameFile))
+            {
+                while (!sr.EndOfStream)
+                {
+                    string name = sr.ReadLine();
+                    usedNames.Add(name);
+                }
+            }
+            return usedNames;
+        }
+
+        public static Dictionary<string ,int> GetLeaderboard()
+        {
+            using (StreamReader sr = new StreamReader(leaderboardFile))
+            {
+                while (!sr.EndOfStream)
+                {
+                    string[] plr = sr.ReadLine().Split(':');
+                    leaderboard.Add(plr[0], stringToInt(plr[1]));
+                }
+            }
+            return leaderboard;
+        }
+
         static int stringToInt(string s)
         {
+            s = Regex.Replace(s, @"\s+", "");
             int y = 0;
             int total = 0;
             for (int i = 0; i < s.Length; i++)
@@ -47,22 +82,65 @@ namespace mang_kontrolltoo
             }
         }
 
+        static string genName()
+        {
+            int len = rnd.Next(4, 9);
+            string[] consonants = { "b", "c", "d", "f", "g", "h", "j", "k", "l", "m", "l", "n", "p", "q", "r", "s", "sh", "zh", "t", "v", "w", "x" };
+            string[] vowels = { "a", "e", "i", "o", "u", "ae", "y" };
+            string Name = "";
+            Name += consonants[rnd.Next(consonants.Length)].ToUpper();
+            Name += vowels[rnd.Next(vowels.Length)];
+            int b = 2;
+            while (b < len)
+            {
+                Name += consonants[rnd.Next(consonants.Length)];
+                b++;
+                Name += vowels[rnd.Next(vowels.Length)];
+                b++;
+            }
+            return Name;
+        }
+
         static string getName()
         {
-            string[] names = { "asd", "fgh", "hjk", "klö", "zxc", "vbn", "nm,", "qwe", "rty", "uio", "püõ" };
-            return names[rnd.Next(names.Length)];
+            string name = genName();
+            if (!usedNames.Any()) return name;
+            while (usedNames.Contains(name))
+                name = genName();
+            return name;
+        }
+
+        static void FillLeaderboard(Tegelane[] arr)
+        {
+            Dictionary<string,int> dict = GetLeaderboard();
+            for (int i = 0; i < arr.Length; i++)
+            {
+                dict.Add(arr[i].nimi, arr[i].PuntkideArv());
+            }
+            var sortedDict = from entry in dict orderby entry.Value descending select entry;
+            using (StreamWriter sw = new StreamWriter("../../../leaderboard.txt"))
+            {
+                foreach (KeyValuePair<string, int> item in sortedDict)
+                {
+                    sw.WriteLine($"{item.Key}:{item.Value}");
+                }
+            }
         }
 
         static Tegelane[] populatePlayers(int plrCount)
         {
-            if (plrCount < 4) throw new Exception();
             Tegelane[] plrs = new Tegelane[plrCount];
-            for (int i = 0; i < plrCount; i++)
+            using (StreamWriter sw = new StreamWriter("../../../usedNames.txt", append: true))
             {
-                Tegelane plr = new Tegelane(getName());
-                plrs[i] = plr;
+                if (plrCount < 4) throw new Exception();
+                for (int i = 0; i < plrCount; i++)
+                {
+                    Tegelane plr = new Tegelane(getName());
+                    sw.WriteLine(plr.nimi);
+                    plrs[i] = plr;
+                }
+                sw.Dispose();
             }
-
             return giveOutItems(plrs);
         }
 
@@ -82,6 +160,30 @@ namespace mang_kontrolltoo
             return plrs;
         }
 
+        static public void PrintLeaderboard(int rows)
+        {
+            int total = TotalLines(leaderboardFile);
+            using (StreamReader sr = new StreamReader(leaderboardFile))
+            {
+                if (total < rows)
+                    rows = total;
+                for (int i = 0; i < rows; i++)
+                {
+                    Console.WriteLine(sr.ReadLine());
+                }
+            }
+        }
+
+        static int TotalLines(string filePath)
+        {
+            using (StreamReader r = new StreamReader(filePath))
+            {
+                int i = 0;
+                while (r.ReadLine() != null) { i++; }
+                return i;
+            }
+        }
+
         static public void PlayGame(int plrCount)
         {
             Tegelane[] plrs = populatePlayers(plrCount);
@@ -94,7 +196,7 @@ namespace mang_kontrolltoo
             Console.WriteLine(win.Info());
             Console.WriteLine("Игрок имел следующие предметы: ");
             win.väljastaEsemed();
-
+            FillLeaderboard(plrs);
         }
     }
 }
